@@ -1,0 +1,82 @@
+---
+export interface Props {
+  title: string;
+  sections: string[];
+  questionCount: number;
+  href: string;
+}
+
+const { title, sections, questionCount, href } = Astro.props;
+---
+
+<a href={href} class="paper-list-item">
+  <div class="paper-list-main">
+    <div class="paper-list-title">{title}</div>
+    <div class="paper-list-tags">
+      {sections.map(s => <span class="tag">{s}</span>)}
+    </div>
+  </div>
+  <div class="paper-list-meta">
+    <span class="badge badge-unclassified">{questionCount} q</span>
+  </div>
+</a>
+
+<style>
+  .paper-list-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    text-decoration: none;
+    color: inherit;
+    gap: var(--space-4);
+  }
+  
+  .paper-list-item:hover {
+    background: var(--paper-alt);
+    text-decoration: none;
+  }
+  
+  .paper-list-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  
+  .paper-list-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  
+  .paper-list-title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  
+  .paper-list-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  
+  .paper-list-meta {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  @media (max-width: 600px) {
+    .paper-list-item {
+      padding: var(--space-3);
+      gap: var(--space-3);
+    }
+  }
+</style>

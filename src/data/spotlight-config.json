@@ -1,0 +1,30 @@
+{
+  "whatChanged": [
+    "**Sectional locking is strict.** Once you move past a question or a section, there's no going back - not to change an answer, not to revisit, not to skip ahead and return. Budget time per section accordingly, because running out mid-section forfeits whatever's left unanswered in it.",
+    "**Verbal Ability leans practical, not grammar-drill.** Recent cycles weight sentence completion, passage recall, and comprehension-under-time-pressure over pure vocabulary/grammar correction - closer to \"can you communicate clearly at work\" than \"can you diagram a sentence.\"",
+    "**Proctoring is real-time and strict either way.** Home-based slots use continuous AI video/audio monitoring; switching tabs or windows ends the exam immediately, no warning. Center-based slots are now the more common default for most drives.",
+    "**The paper is fixed-difficulty, not adaptive.** Same baseline difficulty for everyone in a given slot - no algorithm making it harder or easier based on how you're doing."
+  ],
+  "scoreBands": [
+    {
+      "track": "Ninja",
+      "percentile": "~50th-60th",
+      "description": "Foundation-only clear",
+      "paygrade": "3.36 LPA"
+    },
+    {
+      "track": "Digital",
+      "percentile": "~65th-75th",
+      "description": "Foundation + Advanced clear",
+      "paygrade": "7.0 LPA"
+    },
+    {
+      "track": "Prime",
+      "percentile": "~80th and up",
+      "description": "Strong Advanced performance, especially coding",
+      "paygrade": "9.0 LPA"
+    }
+  ],
+  "registrationStatus": "TCS runs NQT hiring cycles roughly every 4-6 weeks through the year, each with its own registration window and exam date. Eligibility (graduating batch years, minimum aggregate, backlog rules) also varies slightly by cycle. **Check the live drive on the official TCS iON NextStep portal** before registering - dates and eligibility here can lag the real thing.",
+  "officialPortalUrl": "https://nextstep.tcs.com/campus/"
+}

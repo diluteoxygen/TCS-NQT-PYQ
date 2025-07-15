@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://oxy.github.io/TCS-NQT-PYQ-QUESTIONS/sitemap-index.xml

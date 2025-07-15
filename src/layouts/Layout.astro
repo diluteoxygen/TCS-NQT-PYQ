@@ -1,0 +1,352 @@
+---
+import '../styles/global.css';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title: string;
+  description?: string;
+  activePath?: string;
+}
+const { title, description = 'TCS NQT practice — 1,200+ questions, previous papers, DSA patterns.', activePath = '' } = Astro.props;
+const url = Astro.url.pathname;
+const base = (p: string) => url.startsWith(`${import.meta.env.BASE_URL}${p.replace('/', '')}`) ? 'active' : '';
+
+// ── Build complete search index for instant Spotlight Search ──
+const coding = await getCollection('coding-questions');
+const mcqs   = await getCollection('mcq-items');
+const papers = await getCollection('papers');
+const notes  = await getCollection('topic-notes');
+
+const allTopics = [...new Set(coding.flatMap(q => q.data.topics))].filter(t => t !== 'unclassified').sort();
+
+const searchIndex = [
+  {
+    title: 'Toggle Theme',
+    subtitle: 'Action · Switch between Light and Dark mode',
+    url: '#action-theme',
+    category: 'Action',
+    keywords: 'dark mode light mode theme toggle switch'
+  },
+  {
+    title: 'Purge Saved Progress',
+    subtitle: 'Action · Clear all local bookmarks, solved flags, and review status',
+    url: '#action-purge-progress',
+    category: 'Action',
+    keywords: 'purge clear reset delete progress solved bookmarks review start fresh'
+  },
+  {
+    title: 'Random Question',
+    subtitle: 'Action · Go to a random coding question',
+    url: '#action-random-coding',
+    category: 'Action',
+    keywords: 'random coding question practice'
+  },
+  {
+    title: 'Jump to Papers',
+    subtitle: 'Action · Go to MCQ papers list',
+    url: `${import.meta.env.BASE_URL}papers`,
+    category: 'Action',
+    keywords: 'papers exam mcq list'
+  },
+  ...allTopics.map(t => ({
+    title: t.charAt(0).toUpperCase() + t.slice(1),
+    subtitle: `Topic · ${coding.filter(q => (q.data.topics || []).includes(t)).length} coding questions`,
+    url: `${import.meta.env.BASE_URL}coding?topic=${encodeURIComponent(t)}`,
+    category: 'Topic',
+    keywords: `${t} topic category`
+  })),
+  ...coding.map(q => ({
+    title: q.data.title || 'Coding Question',
+    subtitle: `Coding · ${q.data.difficulty || ''} · ${(q.data.topics || []).join(', ')}`,
+    url: `${import.meta.env.BASE_URL}coding/${q.id}`,
+    category: 'Coding',
+    keywords: `${q.data.title || ''} ${(q.data.topics || []).join(' ')} ${q.data.difficulty || ''} ${q.data.status || ''} ${q.data.problem?.slice(0,100) || ''}`
+  })),
+  ...papers.map(p => ({
+    title: p.data.title || 'Paper',
+    subtitle: `Paper · ${p.data.questionCount || 0} questions`,
+    url: `${import.meta.env.BASE_URL}papers/${p.id}`,
+    category: 'Paper',
+    keywords: `${p.data.title || ''} paper exam`
+  })),
+  ...notes.map(n => ({
+    title: n.data.title || 'Note',
+    subtitle: n.data.category === 'hr-interview' ? 'HR Interview Question' : 'DSA Pattern Note',
+    url: `${import.meta.env.BASE_URL}notes/${n.id}`,
+    category: n.data.category === 'hr-interview' ? 'HR Question' : 'DSA Pattern',
+    keywords: `${n.data.title || ''} ${n.data.category || ''} note pattern`
+  })),
+  ...mcqs.slice(0, 300).map(m => {
+    const qText = m.data.question || '';
+    return {
+      title: qText.length > 80 ? qText.slice(0, 80) + '…' : qText,
+      subtitle: `MCQ · ${m.data.paper || ''} · ${m.data.section || ''}`,
+      url: `${import.meta.env.BASE_URL}papers/${m.data.paper || ''}`,
+      category: 'MCQ',
+      keywords: `${qText} ${m.data.section || ''} ${m.data.paper || ''}`
+    };
+  })
+];
+---
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content={description} />
+  
+  <title>{title} — TCS NQT Prep</title>
+  
+  <!-- Open Graph / Meta -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:site_name" content="TCS NQT Prep" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  
+  <script is:inline>
+    const stored = localStorage.getItem('theme');
+    const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = stored ?? (sysDark ? 'dark' : 'light');
+    document.documentElement.dataset.theme = theme;
+  </script>
+</head>
+<body>
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-left">
+      <a href={import.meta.env.BASE_URL} class="nav-brand" aria-label="TCS NQT Prep home">TCS NQT</a>
+      <ul class="nav-links" role="list">
+        <li><a href={`${import.meta.env.BASE_URL}coding`} class={base('/coding')}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Coding
+        </a></li>
+        <li><a href={`${import.meta.env.BASE_URL}mcq`} class={base('/mcq')}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          MCQ Bank
+        </a></li>
+        <li><a href={`${import.meta.env.BASE_URL}papers`} class={base('/papers')}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Papers
+        </a></li>
+        <li><a href={`${import.meta.env.BASE_URL}notes`} class={base('/notes')}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Notes
+        </a></li>
+      </ul>
+    </div>
+    <button class="nav-search-pill" id="search-trigger" aria-label="Search (Ctrl+K)" aria-keyshortcuts="Control+k Meta+k">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Search questions, topics, papers...</span>
+      <kbd>⌘K</kbd>
+    </button>
+    <div class="nav-actions">
+      <button class="nav-btn" id="nav-random-btn" aria-label="Random Question" title="Go to a random coding question">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+      </button>
+      <button class="nav-btn" id="purge-btn" aria-label="Purge saved progress" title="Reset all saved progress (solved, bookmarked, review)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+      </button>
+      <button class="nav-btn" id="theme-toggle" aria-label="Toggle dark mode">
+        <svg id="icon-light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg id="icon-dark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a href="https://github.com/diluteoxygen/TCS-NQT-PYQ" target="_blank" rel="noopener" class="nav-btn" aria-label="GitHub Repository" style="display:flex;align-items:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Search Modal ──────────────────────────────────────── -->
+  <div id="search-modal" role="dialog" aria-modal="true" aria-label="Search">
+    <div id="search-backdrop"></div>
+    <div id="search-box">
+      <input id="search-input" type="search" placeholder="Search questions, topics, papers (e.g. array, binary, paper)..." autocomplete="off" spellcheck="false" />
+      <div id="search-results" role="listbox" aria-label="Search results"></div>
+    </div>
+  </div>
+
+  <script id="search-index-data" type="application/json" set:html={JSON.stringify(searchIndex)} />
+
+  <!-- ── Page content ──────────────────────────────────────── -->
+  <slot />
+
+  <!-- ── Storage Callout ───────────────────────────────────── -->
+  <div id="storage-callout" style="display:none; position:fixed; bottom:var(--space-4); right:var(--space-4); max-width:320px; background:var(--paper); border:1px solid var(--border); padding:var(--space-4); border-radius:var(--radius-lg); box-shadow:0 10px 30px rgba(0,0,0,0.1); z-index:50;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-2);">
+      <div>
+        <p style="margin:0; font-size:var(--text-sm); font-weight:600;">Local Storage Only</p>
+        <p style="margin:var(--space-1) 0 0; font-size:var(--text-xs); color:var(--ink-muted);">Your progress is saved securely in your browser. No account needed. (If you clear data or switch devices, progress resets).</p>
+      </div>
+      <button id="close-callout" style="background:transparent; border:none; cursor:pointer; color:var(--ink-muted); padding:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+
+
+  <script>
+    // ── Local Storage Callout ─────────────────────────────────
+    if (!localStorage.getItem('hide-storage-callout')) {
+      const callout = document.getElementById('storage-callout');
+      if (callout) {
+        callout.style.display = 'block';
+        document.getElementById('close-callout')?.addEventListener('click', () => {
+          callout.style.display = 'none';
+          localStorage.setItem('hide-storage-callout', 'true');
+        });
+      }
+    }
+
+    // ── Dark mode ─────────────────────────────────────────────
+    const toggle = document.getElementById('theme-toggle')!;
+    const iconLight = document.getElementById('icon-light')!;
+    const iconDark  = document.getElementById('icon-dark')!;
+    function applyTheme(t: string) {
+      document.documentElement.dataset.theme = t;
+      localStorage.setItem('theme', t);
+      iconLight.style.display = t === 'dark' ? 'none' : '';
+      iconDark.style.display  = t === 'dark' ? '' : 'none';
+    }
+    applyTheme(theme);
+    toggle.addEventListener('click', () => {
+      applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    // ── Purge Progress ───────────────────────────────────────
+    const purgeBtn = document.getElementById('purge-btn');
+    function handlePurgeProgress() {
+      if (confirm('Reset all saved progress (solved questions, bookmarks, and review flags)? This will start your practice fresh.')) {
+        ['solved-coding', 'review-coding', 'bookmark-coding', 'hide-storage-callout'].forEach(k => localStorage.removeItem(k));
+        window.location.reload();
+      }
+    }
+    if (purgeBtn) {
+      purgeBtn.addEventListener('click', handlePurgeProgress);
+    }
+
+    // ── Random Question ───────────────────────────────────────
+    const randomBtn = document.getElementById('nav-random-btn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', () => {
+        const codingQs = staticIndex.filter(x => x.category === 'Coding');
+        if (codingQs.length) {
+          const rand = codingQs[Math.floor(Math.random() * codingQs.length)];
+          window.location.href = rand.url;
+        }
+      });
+    }
+
+    // ── Search modal ──────────────────────────────────────────
+    const modal    = document.getElementById('search-modal')!;
+    const backdrop = document.getElementById('search-backdrop')!;
+    const input    = document.getElementById('search-input') as HTMLInputElement;
+    const results  = document.getElementById('search-results')!;
+
+    const searchDataElement = document.getElementById('search-index-data');
+    const staticIndex: Array<{ title: string; subtitle: string; url: string; category: string; keywords: string }> = 
+      searchDataElement ? JSON.parse(searchDataElement.textContent || '[]') : [];
+
+    function openSearch() { modal.classList.add('open'); input.focus(); }
+    function closeSearch() { modal.classList.remove('open'); input.value = ''; results.innerHTML = ''; }
+
+    document.getElementById('search-trigger')!.addEventListener('click', openSearch);
+    document.getElementById('search-trigger-mobile')?.addEventListener('click', openSearch);
+    backdrop.addEventListener('click', closeSearch);
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+      if (e.key === 'Escape') closeSearch();
+    });
+
+    results.addEventListener('click', (e) => {
+      const link = (e.target as Element).closest('a.search-result');
+      if (link) {
+        const href = link.getAttribute('href');
+        if (href === '#action-theme') {
+          e.preventDefault();
+          toggle.click();
+          closeSearch();
+        } else if (href === '#action-purge-progress') {
+          e.preventDefault();
+          closeSearch();
+          handlePurgeProgress();
+        } else if (href === '#action-random-coding') {
+          e.preventDefault();
+          const codingQs = staticIndex.filter(x => x.category === 'Coding');
+          if (codingQs.length) {
+            const rand = codingQs[Math.floor(Math.random() * codingQs.length)];
+            window.location.href = rand.url;
+          }
+        }
+      }
+    });
+
+    // Pagefind search integration
+    let pagefind: any = null;
+    async function initPagefind() {
+      if (pagefind) return;
+      try {
+        const pagefindPath = '/pagefind/pagefind.js';
+        // @ts-ignore
+        pagefind = await import(/* @vite-ignore */ pagefindPath);
+      } catch (e) {
+        // Pagefind missing in dev mode, static search index handles it gracefully
+      }
+    }
+
+    input.addEventListener('input', async () => {
+      const q = input.value.trim().toLowerCase();
+      if (!q) { results.innerHTML = ''; return; }
+
+      const terms = q.split(/\s+/);
+      const staticHits = staticIndex.filter(item => {
+        const text = (item.title + ' ' + item.subtitle + ' ' + item.keywords).toLowerCase();
+        return terms.every(term => text.includes(term));
+      }).slice(0, 12);
+
+      let html = staticHits.map(h => `
+        <a href="${h.url}" class="search-result" role="option">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-2)">
+            <span style="font-weight:600; color:var(--ink);">${h.title}</span>
+            <span class="badge" style="font-size:0.65rem; background:var(--paper-alt); border:1px solid var(--border); color:var(--ink-muted); padding:1px 6px;">${h.category}</span>
+          </div>
+          <div class="search-result-label" style="margin-top:2px; font-size:var(--text-xs); color:var(--ink-muted);">${h.subtitle}</div>
+        </a>
+      `).join('');
+
+      await initPagefind();
+      if (pagefind) {
+        try {
+          const search = await pagefind.search(q);
+          const pagefindHits = await Promise.all(search.results.slice(0, 5).map((r: any) => r.data()));
+          
+          if (pagefindHits.length > 0) {
+            html += pagefindHits.map((h: any) => `
+              <a href="${h.url}" class="search-result" role="option">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-2)">
+                  <span style="font-weight:600; color:var(--ink);">${h.meta.title || 'Page'}</span>
+                  <span class="badge" style="font-size:0.65rem; background:var(--paper-alt); border:1px solid var(--border); color:var(--ink-muted); padding:1px 6px;">Deep Match</span>
+                </div>
+                <div style="font-size:var(--text-xs); color:var(--ink-muted); margin-top:2px;">${h.excerpt}</div>
+              </a>
+            `).join('');
+          }
+        } catch (err) {}
+      }
+
+      if (!html) {
+        results.innerHTML = `<div style="padding:var(--space-4); color:var(--ink-muted); font-size:var(--text-sm); text-align:center;">No results found for "${q}"</div>`;
+      } else {
+        results.innerHTML = html;
+      }
+    });
+  </script>
+</body>
+</html>

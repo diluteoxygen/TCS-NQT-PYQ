@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const notes = await getCollection('topic-notes');
+const hr  = notes.filter(n => n.data.category === 'hr-interview');
+const dsa = notes.filter(n => n.data.category === 'dsa-patterns');
+---
+<Layout title="Study Notes">
+  <div class="page-shell no-sidebar">
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Study Notes</h1>
+        <p class="page-subtitle">HR interview answers and DSA pattern catalog.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-8);align-items:start;">
+
+        <!-- HR Questions -->
+        <div>
+          <div class="detail-section-label" style="margin-bottom:var(--space-4)">
+            HR Interview Questions <span class="badge badge-unclassified" style="margin-left:var(--space-2)">{hr.length}</span>
+          </div>
+          <div class="q-list">
+            {hr.map((n, i) => (
+              <a href={`${import.meta.env.BASE_URL}notes/${n.id}`} class="q-row">
+                <span class="q-num">{i + 1}</span>
+                <span class="q-title">{n.data.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <!-- DSA Patterns -->
+        <div>
+          <div class="detail-section-label" style="margin-bottom:var(--space-4)">
+            DSA Patterns <span class="badge badge-unclassified" style="margin-left:var(--space-2)">{dsa.length}</span>
+          </div>
+          <div class="q-list">
+            {dsa.map((n, i) => (
+              <a href={`${import.meta.env.BASE_URL}notes/${n.id}`} class="q-row">
+                <span class="q-num">{i + 1}</span>
+                <span class="q-title">{n.data.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</Layout>

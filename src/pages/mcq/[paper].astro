@@ -1,0 +1,155 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const mcqs   = await getCollection('mcq-items');
+  const papers = await getCollection('papers');
+  const paperIds = [...new Set(mcqs.map(m => m.data.paper))];
+  return paperIds.map(pid => ({
+    params: { paper: pid },
+    props: {
+      paperMeta: papers.find(p => p.data.id === pid) || null,
+      questions: mcqs
+        .filter(m => m.data.paper === pid)
+        .sort((a,b) => {
+          const sA = a.data.section, sB = b.data.section;
+          if (sA !== sB) return sA.localeCompare(sB);
+          return a.data.questionNumber - b.data.questionNumber;
+        }),
+    },
+  }));
+}
+
+const { paperMeta, questions } = Astro.props;
+const title = paperMeta?.data.title ?? Astro.params.paper;
+const sections = [...new Set(questions.map(q => q.data.section))];
+
+// Parse options index: A→0, B→1, 1→0, 2→1, etc.
+const OPTION_LABELS = ['A','B','C','D'];
+---
+<Layout title={title}>
+  <div class="page-shell no-sidebar">
+    <main class="main-content" style="max-width:58rem;" data-pagefind-body>
+      <div class="detail-breadcrumb"><a href={`${import.meta.env.BASE_URL}mcq`}>← MCQ Bank</a></div>
+      <div class="page-header">
+        <h1 class="page-title">{title}</h1>
+        {paperMeta && (
+          <p class="page-subtitle">
+            {sections.length} section{sections.length > 1 ? 's' : ''} · {questions.length} questions
+          </p>
+        )}
+      </div>
+
+      {sections.length > 1 && (
+        <div class="paper-sticky-nav" style="position:sticky; top:var(--nav-height); background:var(--paper); z-index:90; border-bottom:1px solid var(--border); padding:var(--space-3) 0; margin-bottom:var(--space-8); display:flex; gap:var(--space-2); overflow-x:auto; scrollbar-width:none;">
+          {sections.map((section, idx) => {
+            const cleanSection = section.replace(/^SECTION \d+:\s*/i, '');
+            return (
+              <a href={`#sec-${idx}`} class="badge section-link" style="background:var(--paper-alt); color:var(--ink-muted); text-decoration:none; white-space:nowrap;">{cleanSection}</a>
+            );
+          })}
+        </div>
+      )}
+
+      {sections.map((section, idx) => {
+        const sectionQs = questions.filter(q => q.data.section === section);
+        const cleanSection = section.replace(/^SECTION \d+:\s*/i, '');
+        return (
+          <div id={`sec-${idx}`} class="paper-section-wrapper" style="scroll-margin-top: calc(var(--nav-height) + 4rem);">
+            <div class="paper-section-head">{cleanSection}</div>
+            {sectionQs.map(async (q) => {
+              const { Content } = await render(q);
+              const opts = q.data.options ?? [];
+              const ansRaw = q.data.answer.raw ?? '';
+              const isMissing = q.data.answer.status === 'missing';
+              return (
+                <div class="paper-q" data-mcq-id={q.data.id}>
+                  <div class="paper-q-num">Question {q.data.questionNumber}</div>
+                  <div class="paper-q-text"><Content /></div>
+
+                  {opts.length > 0 && (
+                    <div class="mcq-options" role="group" aria-label="Options">
+                      {opts.map((opt, i) => (
+                        <button
+                          class="mcq-option"
+                          data-opt-idx={i}
+                          data-correct={ansRaw}
+                          data-opt-text={opt}
+                        >
+                          <span class="option-label">{OPTION_LABELS[i] ?? i+1}</span>
+                          <span>{opt}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {isMissing && (
+                    <p style="margin-top:var(--space-3);font-size:var(--text-xs);color:var(--ink-muted);">
+                      Answer not available in source.
+                    </p>
+                  )}
+
+                  {!isMissing && opts.length === 0 && ansRaw && (
+                    <div class="spoiler" style="margin-top:var(--space-3)">
+                      <button class="spoiler-toggle" aria-expanded="false" aria-controls={`ans-${q.data.id}`}>
+                        <span>Show Answer</span>
+                        <svg class="spoiler-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div class="spoiler-body" id={`ans-${q.data.id}`}
+                        style="font-size:var(--text-sm);font-family:var(--font-mono)"
+                      >{ansRaw}</div>
+                    </div>
+                  )}
+
+                  <div class="mcq-explanation" id={`expl-${q.data.id}`}>{ansRaw}</div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </main>
+  </div>
+
+  <script>
+    // ── Spoilers ──────────────────────────────────────────────
+    document.querySelectorAll<HTMLElement>('.spoiler-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        const bodyId = btn.getAttribute('aria-controls')!;
+        document.getElementById(bodyId)!.classList.toggle('open', !expanded);
+      });
+    });
+
+    // ── MCQ interactive ───────────────────────────────────────
+    document.querySelectorAll<HTMLElement>('.paper-q').forEach(qEl => {
+      const buttons = qEl.querySelectorAll<HTMLButtonElement>('.mcq-option');
+      const explEl  = qEl.querySelector<HTMLElement>('.mcq-explanation');
+      if (!buttons.length) return;
+
+      // Try to match answer to an option by text or index
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (buttons[0].disabled) return; // already answered
+          const chosen  = btn.dataset.optText!.toLowerCase().trim();
+          const correct = btn.dataset.correct!.toLowerCase().trim();
+          const isCorrect = correct.includes(chosen) || chosen.includes(correct.substring(0,30));
+
+          buttons.forEach(b => {
+            b.disabled = true;
+            const bText = b.dataset.optText!.toLowerCase().trim();
+            const bIsCorrect = correct.includes(bText) || bText.includes(correct.substring(0,30));
+            if (bIsCorrect) b.classList.add(b === btn ? 'correct' : 'revealed-correct');
+          });
+          if (!isCorrect) btn.classList.add('incorrect');
+
+          if (explEl) {
+            explEl.classList.add('visible');
+          }
+        });
+      });
+    });
+  </script>
+</Layout>

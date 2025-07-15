@@ -1,0 +1,258 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const questions = await getCollection('coding-questions');
+
+// Sort: verified PYQ first, then by difficulty, then alphabetically
+const sorted = questions.sort((a, b) => {
+  const statusOrder = { verified_pyq: 0, practice: 1, unclassified: 2 };
+  const diffOrder   = { hard: 0, medium: 1, easy: 2, unclassified: 3 };
+  const sa = statusOrder[a.data.status] ?? 2, sb = statusOrder[b.data.status] ?? 2;
+  if (sa !== sb) return sa - sb;
+  const da = diffOrder[a.data.difficulty] ?? 3, db = diffOrder[b.data.difficulty] ?? 3;
+  if (da !== db) return da - db;
+  return a.data.title.localeCompare(b.data.title);
+});
+
+const allTopics = [...new Set(questions.flatMap(q => q.data.topics))].filter(t => t !== 'unclassified').sort();
+const difficulties = ['easy', 'medium', 'hard'] as const;
+const statuses     = ['verified_pyq', 'practice'] as const;
+
+const statusLabel: Record<string, string> = {
+  verified_pyq: 'Verified PYQ',
+  practice: 'Practice',
+};
+
+const countByDiff = (d: string) => questions.filter(q => q.data.difficulty === d).length;
+const countByStatus = (s: string) => questions.filter(q => q.data.status === s).length;
+const countByTopic  = (t: string) => questions.filter(q => q.data.topics.includes(t)).length;
+---
+<Layout title="Coding Questions">
+  <div class="page-shell">
+    <!-- ── Sidebar Filters (Quick Nav) ────────────────────────── -->
+    <aside class="sidebar" aria-label="Filter questions">
+      <div class="filter-section">
+        <span class="filter-label">Review</span>
+        <div class="filter-group">
+          <button class="filter-chip" data-nav="review" data-value="bookmarked">
+            <span style="font-size:var(--text-sm)">Bookmarked</span>
+          </button>
+          <button class="filter-chip" data-nav="review" data-value="needs_review">
+            <span style="font-size:var(--text-sm)">Needs Review</span>
+          </button>
+          <button class="filter-chip" data-nav="review" data-value="unattempted">
+            <span style="font-size:var(--text-sm)">Unattempted</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <span class="filter-label">Difficulty</span>
+        <div class="filter-group">
+          {difficulties.map(d => (
+            <button class="filter-chip" data-nav="difficulty" data-value={d}>
+              <span class={`badge badge-${d}`} style="pointer-events:none">{d}</span>
+              <span class="chip-count">{countByDiff(d)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <span class="filter-label">Status</span>
+        <div class="filter-group">
+          {statuses.map(s => (
+            <button class="filter-chip" data-nav="status" data-value={s}>
+              <span style="font-size:var(--text-sm)">{statusLabel[s]}</span>
+              <span class="chip-count">{countByStatus(s)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <span class="filter-label">Topic</span>
+        <div class="filter-group">
+          {allTopics.map(t => (
+            <button class="filter-chip" data-nav="topic" data-value={t}>
+              <span style="font-size:var(--text-sm)">{t}</span>
+              <span class="chip-count">{countByTopic(t)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main List ────────────────────────────────────────── -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Coding Questions</h1>
+          <p class="page-subtitle">Click any row to open the full problem.</p>
+        </div>
+      </div>
+
+      <div class="list-meta">
+        <span id="q-count">{questions.length} questions</span>
+        <span>Progress: <span id="done-count">0</span> solved</span>
+      </div>
+
+      <div class="q-list" id="q-list" role="list">
+        {sorted.map((q, i) => (
+          <a
+            href={`${import.meta.env.BASE_URL}coding/${q.id}`}
+            class="q-row"
+            role="listitem"
+            data-difficulty={q.data.difficulty}
+            data-status={q.data.status}
+            data-topics={q.data.topics.join(',')}
+            data-id={q.data.id}
+            tabindex="0"
+          >
+            <span class="q-num">{i + 1}</span>
+            <span class="q-title">{q.data.title}</span>
+            <span class="q-meta">
+              {q.data.topics.slice(0,2).map(t => <span class="tag">{t}</span>)}
+              <span class={`badge badge-${q.data.difficulty}`}>
+                {q.data.difficulty === 'easy' ? 'E' : q.data.difficulty === 'medium' ? 'M' : q.data.difficulty === 'hard' ? 'H' : ''} · {q.data.difficulty}
+              </span>
+              {q.data.status === 'verified_pyq' && <span class="badge badge-verified">P · PYQ</span>}
+              <span class="q-done-check" data-check={q.data.id} aria-hidden="true"></span>
+            </span>
+          </a>
+        ))}
+      </div>
+
+      <p id="no-results" style="display:none;padding:var(--space-6);color:var(--ink-muted);font-size:var(--text-sm);">
+        No questions match the selected filters.
+      </p>
+    </main>
+  </div>
+
+  <script>
+    // ── Progress (localStorage) ────────────────────────────────
+    const solved: Set<string> = new Set(JSON.parse(localStorage.getItem('solved-coding') || '[]'));
+    const review: Set<string> = new Set(JSON.parse(localStorage.getItem('review-coding') || '[]'));
+    const bookmark: Set<string> = new Set(JSON.parse(localStorage.getItem('bookmark-coding') || '[]'));
+    
+    function refreshProgress() {
+      let count = 0;
+      document.querySelectorAll<HTMLElement>('[data-check]').forEach(el => {
+        const id = el.dataset.check!;
+        if (solved.has(id)) { el.classList.add('done'); count++; }
+        else { el.classList.remove('done'); }
+      });
+      document.getElementById('done-count')!.textContent = count.toString();
+    }
+    refreshProgress();
+
+    document.querySelectorAll<HTMLElement>('.q-done-check').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = el.dataset.check!;
+        if (solved.has(id)) solved.delete(id);
+        else solved.add(id);
+        localStorage.setItem('solved-coding', JSON.stringify([...solved]));
+        refreshProgress();
+      });
+    });
+
+    // ── Filtering Logic ────────────────────────────────────────
+    
+    // State
+    let activeNavType: string | null = null;
+    let activeNavVal: string | null = null;
+
+    // Read from URL on load
+    function loadFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      
+      // Clear current state
+      activeNavType = null;
+      activeNavVal = null;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+
+      // Check quick nav (?difficulty=hard)
+      for (const nav of ['review', 'difficulty', 'status', 'topic']) {
+        if (params.has(nav)) {
+          activeNavType = nav;
+          activeNavVal = params.get(nav);
+          const chip = document.querySelector(`.filter-chip[data-nav="${nav}"][data-value="${activeNavVal}"]`);
+          if (chip) chip.classList.add('active');
+          break; // Single select across all groups
+        }
+      }
+      
+      applyFilters();
+    }
+
+    // Sidebar Quick Nav (Single-select across ALL groups)
+    document.querySelectorAll<HTMLElement>('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const type = chip.dataset.nav!;
+        const val = chip.dataset.value!;
+        
+        if (activeNavType === type && activeNavVal === val) {
+          // Toggle off
+          updateUrl({}, ['review', 'difficulty', 'status', 'topic']);
+        } else {
+          // Toggle on (clears everything else)
+          updateUrl({ [type]: val }, ['review', 'difficulty', 'status', 'topic']);
+        }
+      });
+    });
+
+    function updateUrl(setParams: Record<string, string>, deleteParams: string[]) {
+      const url = new URL(window.location.href);
+      for (const dp of deleteParams) url.searchParams.delete(dp);
+      for (const [k, v] of Object.entries(setParams)) url.searchParams.set(k, v);
+      window.history.pushState({}, '', url);
+      loadFromUrl();
+    }
+
+    window.addEventListener('popstate', loadFromUrl);
+
+    function applyFilters() {
+      const rows = document.querySelectorAll<HTMLElement>('.q-row');
+      let visible = 0;
+
+      rows.forEach(row => {
+        const diff    = row.dataset.difficulty!;
+        const status  = row.dataset.status!;
+        const topics  = row.dataset.topics!.split(',');
+        
+        let show = true;
+        if (activeNavType && activeNavVal) {
+           // Single Quick Nav Match
+           if (activeNavType === 'difficulty') show = diff === activeNavVal;
+           else if (activeNavType === 'status') show = status === activeNavVal;
+           else if (activeNavType === 'topic') show = topics.includes(activeNavVal);
+           else if (activeNavType === 'review') {
+             const id = row.dataset.id!;
+             if (activeNavVal === 'bookmarked') show = bookmark.has(id);
+             else if (activeNavVal === 'needs_review') show = review.has(id);
+             else if (activeNavVal === 'unattempted') show = !solved.has(id) && !review.has(id);
+           }
+        }
+
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('q-count')!.textContent = `${visible} questions`;
+      document.getElementById('no-results')!.style.display = visible === 0 ? '' : 'none';
+    }
+
+    // Initialize on load
+    loadFromUrl();
+
+    // ── Keyboard navigation ───────────────────────────────────
+    document.getElementById('q-list')!.addEventListener('keydown', e => {
+      const rows = [...document.querySelectorAll<HTMLElement>('.q-row:not([style*="none"])')];
+      const idx  = rows.indexOf(document.activeElement as HTMLElement);
+      if (e.key === 'ArrowDown' && idx < rows.length - 1) { e.preventDefault(); rows[idx + 1].focus(); }
+      if (e.key === 'ArrowUp'   && idx > 0)               { e.preventDefault(); rows[idx - 1].focus(); }
+    });
+  </script>
+</Layout>

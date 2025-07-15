@@ -1,0 +1,64 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PaperListItem from '../../components/PaperListItem.astro';
+import { getCollection } from 'astro:content';
+
+const mcqs   = await getCollection('mcq-items');
+const papers = await getCollection('papers');
+
+// Group by paper
+const byPaper = new Map<string, typeof mcqs>();
+for (const m of mcqs) {
+  const p = m.data.paper;
+  if (!byPaper.has(p)) byPaper.set(p, []);
+  byPaper.get(p)!.push(m);
+}
+
+---
+<Layout title="MCQ Bank">
+  <div class="page-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Filter MCQs">
+      <div class="filter-section">
+        <span class="filter-label">Source</span>
+        <div class="filter-group">
+          {[...byPaper.entries()].map(([paperId, qs]) => {
+            const paper = papers.find(p => p.data.id === paperId);
+            const label = paper ? paper.data.title : paperId;
+            return (
+              <button class="filter-chip" data-filter="paper" data-value={paperId}>
+                <span style="font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{label}</span>
+                <span class="chip-count">{qs.length}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">MCQ Bank</h1>
+        <p class="page-subtitle">Click a paper to browse its questions.</p>
+      </div>
+
+      <div class="q-list" id="paper-list">
+        {[...byPaper.entries()].map(([paperId, qs]) => {
+          const paper = papers.find(p => p.data.id === paperId);
+          const label = paper ? paper.data.title : paperId;
+          const sections = [...new Set(qs.map(q => q.data.section.replace(/^SECTION \d+:\s*/i, '').split(':')[0].trim()))];
+          const sectionDisplay = sections.length > 3 ? [...sections.slice(0,3), `+${sections.length - 3}`] : sections;
+          return (
+            <PaperListItem 
+              title={label} 
+              sections={sectionDisplay} 
+              questionCount={qs.length} 
+              href={`${import.meta.env.BASE_URL}mcq/${paperId}`} 
+            />
+          );
+        })}
+      </div>
+    </main>
+  </div>
+</Layout>

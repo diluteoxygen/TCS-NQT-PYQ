@@ -1,0 +1,360 @@
+---
+import config from '../data/spotlight-config.json';
+
+const parseMarkdown = (text: string) => {
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+};
+---
+<section class="spotlight-section">
+  <div class="spotlight-header">
+    <div class="spotlight-title-row">
+      <h2 class="spotlight-title">✨ NQT Spotlight</h2>
+    </div>
+    <p class="spotlight-subtitle">What the TCS NQT actually looks like this cycle - pattern, cutoffs, and what changed.</p>
+  </div>
+
+  <div class="spotlight-glance">
+    <span class="glance-chip"><strong>190 minutes</strong> total</span>
+    <span class="glance-chip"><strong>~83 questions</strong> total</span>
+    <span class="glance-chip"><strong>Zero</strong> negative marking</span>
+    <span class="glance-chip">C, C++, Java, Python</span>
+  </div>
+
+  <div class="spotlight-content collapsed" id="spotlight-content">
+    <div class="spotlight-fade" id="spotlight-fade"></div>
+
+  <div class="spotlight-block">
+    <h3>What changed for this cycle</h3>
+    <ul class="spotlight-list">
+      {config.whatChanged.map((item: string) => (
+        <li set:html={parseMarkdown(item)}></li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="spotlight-block">
+    <h3>Section-by-section breakdown</h3>
+    <div class="table-wrapper">
+      <table class="spotlight-table">
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Section</th>
+            <th>Focus</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="3"><strong>Foundation</strong><br/><span class="text-sm text-muted">everyone takes this</span></td>
+            <td>Numerical Ability</td>
+            <td>Number systems, percentages, profit & loss, time & work, time-speed-distance, averages, SI/CI, ratios</td>
+            <td rowspan="3"><em>(within 75 min)</em></td>
+          </tr>
+          <tr>
+            <td>Verbal Ability</td>
+            <td>Reading comprehension, sentence completion/correction, para jumbles, passage recall, vocabulary</td>
+          </tr>
+          <tr>
+            <td>Reasoning Ability</td>
+            <td>Logical reasoning, coding-decoding, blood relations, directions, series</td>
+          </tr>
+          <tr class="table-divider">
+            <td rowspan="2"><strong>Advanced</strong><br/><span class="text-sm text-muted">needed for Digital/Prime</span></td>
+            <td>Quant & Reasoning</td>
+            <td>Higher-difficulty quant, data interpretation, complex reasoning</td>
+            <td>25 min</td>
+          </tr>
+          <tr>
+            <td>Coding</td>
+            <td>2–3 problems, DSA fundamentals — arrays, strings, loops, pattern-based logic</td>
+            <td>90 min</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="spotlight-note">Foundation is 65 questions / 75 minutes and is itself an elimination round — clearing it is what makes you eligible for the Advanced section and the higher-paying tracks.</p>
+  </div>
+
+  <div class="spotlight-block">
+    <h3>Score bands — Ninja / Digital / Prime</h3>
+    <div class="spotlight-disclaimer">
+      <strong>Note:</strong> This entire block is a community-estimated range, not an official TCS figure. TCS does not publish cutoffs. Treat these as "am I in the right ballpark" guidance, not a pass/fail line.
+    </div>
+    <div class="table-wrapper">
+      <table class="spotlight-table">
+        <thead>
+          <tr>
+            <th>Track</th>
+            <th>Rough percentile</th>
+            <th>What it roughly maps to</th>
+            <th>Paygrade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {config.scoreBands.map((band: { track: string, percentile: string, description: string, paygrade: string }) => (
+            <tr>
+              <td><strong>{band.track}</strong></td>
+              <td>{band.percentile}</td>
+              <td>{band.description}</td>
+              <td>{band.paygrade}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="spotlight-block">
+    <h3>Exam-day rules that actually trip people up</h3>
+    <ul class="spotlight-list">
+      <li>Once you lock in an answer, it's locked - <strong>no revisiting</strong>.</li>
+      <li><strong>No skipping</strong> a section to come back to it later.</li>
+      <li>One tab/window switch <strong>ends the test immediately</strong>, no second chance.</li>
+      <li><strong>Remote slots:</strong> your video and audio are monitored the entire time.</li>
+      <li><strong>Center slots:</strong> rough sheets are provided and collected before you leave - don't plan around bringing your own.</li>
+    </ul>
+  </div>
+
+  <div class="spotlight-block">
+    <div class="registration-widget">
+      <p set:html={parseMarkdown(config.registrationStatus)}></p>
+      <a href={config.officialPortalUrl} target="_blank" rel="noopener noreferrer" class="external-link">Visit TCS iON NextStep →</a>
+    </div>
+  </div>
+
+  <div class="spotlight-ctas">
+    <a href="#" id="spotlight-resume-btn" class="nav-btn cta-btn">→ Continue where you left off</a>
+    <a href={`${import.meta.env.BASE_URL}mcq`} class="nav-btn cta-btn">→ Browse the MCQ bank</a>
+    <a href={`${import.meta.env.BASE_URL}notes`} class="nav-btn cta-btn">→ Read the pattern notes</a>
+  </div>
+  </div>
+
+  <div class="spotlight-expand-bar" id="spotlight-expand-bar">
+    <button class="read-more-link" id="spotlight-expand-btn">Read more ↓</button>
+  </div>
+</section>
+
+<script>
+  const baseUrl = import.meta.env.BASE_URL;
+  const ids = JSON.parse(document.getElementById('coding-ids')?.textContent || '[]');
+  const solved = new Set(JSON.parse(localStorage.getItem('solved-coding') || '[]'));
+  
+  const resumeBtn = document.getElementById('spotlight-resume-btn');
+  if (resumeBtn) {
+    if (solved.size > 0 && solved.size < ids.length) {
+      resumeBtn.textContent = '→ Continue where you left off';
+      resumeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const unsolved = ids.find((id: string) => !solved.has(id));
+        if (unsolved) window.location.href = `${baseUrl}coding/${unsolved}`;
+      });
+    } else {
+      resumeBtn.textContent = "→ Start with today's paper";
+      resumeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = `${baseUrl}papers/solved-paper-2024-morning`;
+      });
+    }
+  }
+
+  const expandBtn = document.getElementById('spotlight-expand-btn');
+  const content = document.getElementById('spotlight-content');
+  const fade = document.getElementById('spotlight-fade');
+  const expandBar = document.getElementById('spotlight-expand-bar');
+  if (expandBtn && content && fade) {
+    expandBtn.addEventListener('click', () => {
+      content.classList.remove('collapsed');
+      fade.style.display = 'none';
+      if (expandBar) expandBar.style.display = 'none';
+    });
+  }
+</script>
+
+<style>
+  .spotlight-section {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    margin-bottom: var(--space-8);
+  }
+  .spotlight-content {
+    position: relative;
+  }
+  .spotlight-content.collapsed {
+    max-height: 140px;
+    overflow: hidden;
+  }
+  .spotlight-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: linear-gradient(to bottom, transparent 0%, var(--paper) 100%);
+    pointer-events: none;
+    z-index: 10;
+  }
+  .spotlight-expand-bar {
+    margin-top: var(--space-2);
+    text-align: center;
+  }
+  .read-more-link {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .read-more-link:hover {
+    background: var(--paper-alt);
+    border-color: var(--border-mid);
+  }
+  .spotlight-header {
+    margin-bottom: var(--space-4);
+  }
+  .spotlight-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+  }
+  .spotlight-title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink-muted);
+  }
+  .spotlight-subtitle {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: var(--text-xs);
+  }
+  .spotlight-glance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .glance-chip {
+    font-size: var(--text-xs);
+    background: var(--border);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+  }
+  .spotlight-block {
+    margin-bottom: var(--space-6);
+  }
+  .spotlight-block h3 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--space-1);
+  }
+  .spotlight-list {
+    margin: 0;
+    padding-left: var(--space-4);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+  .spotlight-list li {
+    margin-bottom: var(--space-2);
+  }
+  .spotlight-note {
+    font-size: var(--text-sm);
+    color: var(--ink-muted);
+    margin-top: var(--space-2);
+    font-style: italic;
+  }
+  .spotlight-disclaimer {
+    background: rgba(176, 57, 47, 0.1);
+    border-left: 3px solid var(--difficulty-hard);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+  }
+  .table-wrapper {
+    overflow-x: auto;
+  }
+  .spotlight-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+  .spotlight-table th, .spotlight-table td {
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .spotlight-table th {
+    background: rgba(0,0,0,0.02);
+    font-weight: 600;
+  }
+  .table-divider td {
+    border-top: 2px solid var(--border);
+  }
+  .text-sm {
+    font-size: var(--text-xs);
+  }
+  .text-muted {
+    color: var(--ink-muted);
+  }
+  .registration-widget {
+    background: rgba(31, 75, 63, 0.05);
+    border: 1px solid var(--accent);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+  .registration-widget p {
+    margin-top: 0;
+    margin-bottom: var(--space-3);
+  }
+  .external-link {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .external-link:hover {
+    text-decoration: underline;
+  }
+  .spotlight-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+  }
+  .cta-btn {
+    text-align: left;
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+  .cta-btn:hover {
+    background: rgba(0,0,0,0.02);
+  }
+  @media (min-width: 640px) {
+    .spotlight-ctas {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .cta-btn {
+      width: fit-content;
+    }
+  }
+</style>

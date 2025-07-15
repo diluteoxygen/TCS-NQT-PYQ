@@ -1,0 +1,30 @@
+{
+  "name": "tcs-nqt-site",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "postbuild": "pagefind --site dist",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "ingest": "tsx scripts/ingest.ts",
+    "classify:export": "tsx scripts/export-unclassified.ts",
+    "classify:import": "tsx scripts/import-classifications.ts"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.2.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "pagefind": "^1.5.2",
+    "tsx": "^4.23.11",
+    "typescript": "^6.0.3"
+  }
+}

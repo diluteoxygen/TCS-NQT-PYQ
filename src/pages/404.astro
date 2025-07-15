@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="404: Not Found">
+  <main class="page-shell no-sidebar">
+    <div class="main-content" style="text-align:center; padding:var(--space-12) var(--space-4);">
+      <h1 class="page-title" style="font-size:var(--text-3xl);">404</h1>
+      <p class="page-subtitle" style="margin-top:var(--space-4);">
+        We couldn't find the page you're looking for.
+      </p>
+      <div style="margin-top:var(--space-8);">
+        <a href={import.meta.env.BASE_URL} class="nav-btn" style="display:inline-flex;">Return Home</a>
+      </div>
+    </div>
+  </main>
+</Layout>

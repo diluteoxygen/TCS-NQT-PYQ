@@ -1,0 +1,189 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const papers = await getCollection('papers');
+  const mcqs   = await getCollection('mcq-items');
+  return papers.map(p => ({
+    params: { id: p.data.id },
+    props: {
+      paper: p,
+      questions: mcqs
+        .filter(m => m.data.paper === p.data.id)
+        .sort((a,b) => {
+          if (a.data.section !== b.data.section) return a.data.section.localeCompare(b.data.section);
+          return a.data.questionNumber - b.data.questionNumber;
+        }),
+    },
+  }));
+}
+
+const { paper, questions } = Astro.props;
+const sections = [...new Set(questions.map(q => q.data.section))];
+const LABELS   = ['A','B','C','D'];
+---
+<Layout title={paper.data.title}>
+  <div class="page-shell no-sidebar">
+    <main class="main-content" style="max-width:58rem;" data-pagefind-body>
+      <div class="detail-breadcrumb"><a href={`${import.meta.env.BASE_URL}papers`}>← Papers</a></div>
+
+      <div class="page-header">
+        <h1 class="page-title">{paper.data.title}</h1>
+        <p class="page-subtitle">{questions.length} questions · {sections.length} sections</p>
+        <button onclick="window.print()" class="nav-btn" style="margin-top:var(--space-3);display:inline-flex">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print / Save PDF
+        </button>
+      </div>
+
+      <!-- Sticky Nav Bar -->
+      <div class="paper-sticky-nav" style="position:sticky; top:var(--nav-height); background:var(--paper); z-index:90; border-bottom:1px solid var(--border); padding:var(--space-3) 0; margin-bottom:var(--space-8); display:flex; justify-content:space-between; align-items:center;">
+        <div class="section-jump" style="display:flex; gap:var(--space-2); overflow-x:auto; padding-bottom:var(--space-1); flex-wrap:nowrap; scrollbar-width:none;">
+          {sections.map((section, idx) => {
+            const cleanSection = section.replace(/^SECTION \d+:\s*/i, '');
+            return (
+              <a href={`#sec-${idx}`} class="badge section-link" style="background:var(--paper-alt); color:var(--ink-muted); text-decoration:none; white-space:nowrap;" data-idx={idx}>{cleanSection}</a>
+            );
+          })}
+        </div>
+        <div id="viewed-tracker" style="font-size:var(--text-xs); color:var(--ink-muted); font-weight:600; white-space:nowrap; margin-left:var(--space-4);">
+          <span id="viewed-count">0</span> / {questions.length} viewed
+        </div>
+      </div>
+
+      {sections.map((section, idx) => {
+        const sectionQs = questions.filter(q => q.data.section === section);
+        const cleanSection = section.replace(/^SECTION \d+:\s*/i, '');
+        return (
+          <div id={`sec-${idx}`} class="paper-section-wrapper" data-idx={idx} style="scroll-margin-top: calc(var(--nav-height) + 4rem);">
+            <div class="paper-section-head">{cleanSection}</div>
+            {sectionQs.map(async (q) => {
+              const { Content } = await render(q);
+              const opts = q.data.options ?? [];
+              const ansRaw = q.data.answer.raw ?? '';
+              const isMissing = q.data.answer.status === 'missing';
+              return (
+                <div class="paper-q" data-mcq-id={q.data.id}>
+                  <div class="paper-q-num">Q{q.data.questionNumber}</div>
+                  <div class="paper-q-text"><Content /></div>
+
+                  {opts.length > 0 && (
+                    <div class="mcq-options" role="group" aria-label="Options">
+                      {opts.map((opt, i) => (
+                        <button class="mcq-option" data-opt-idx={i} data-correct={ansRaw} data-opt-text={opt}>
+                          <span class="option-label">{LABELS[i] ?? i+1}</span>
+                          <span>{opt}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {isMissing && (
+                    <p style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--ink-muted);">
+                      Answer not in source.
+                    </p>
+                  )}
+
+                  {!isMissing && opts.length === 0 && ansRaw && (
+                    <div class="spoiler" style="margin-top:var(--space-3)">
+                      <button class="spoiler-toggle" aria-expanded="false" aria-controls={`a-${q.data.id}`}>
+                        <span>Answer</span>
+                        <svg class="spoiler-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div class="spoiler-body" id={`a-${q.data.id}`} style="font-size:var(--text-sm)">{ansRaw}</div>
+                    </div>
+                  )}
+
+                  <div class="mcq-explanation" id={`expl-${q.data.id}`}>{ansRaw}</div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      <!-- Report issue link -->
+      <div style="display:flex;justify-content:center;margin-top:var(--space-12);padding-top:var(--space-4);border-top:1px solid var(--border);">
+        <a href="https://github.com/diluteoxygen/TCS-NQT-PYQ/issues/new" target="_blank" rel="noopener" style="font-size:var(--text-sm);color:var(--ink-muted);display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Report an issue with this paper
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let viewedCount = 0;
+    const viewedSpan = document.getElementById('viewed-count')!;
+    const paperId = window.location.pathname; // using pathname as unique paper key for this session (optional localstorage)
+
+    document.querySelectorAll<HTMLElement>('.spoiler-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        document.getElementById(btn.getAttribute('aria-controls')!)!.classList.toggle('open', !expanded);
+        if (!expanded && !btn.dataset.viewed) {
+          btn.dataset.viewed = "true";
+          viewedCount++;
+          viewedSpan.textContent = viewedCount.toString();
+        }
+      });
+    });
+
+    document.querySelectorAll<HTMLElement>('.paper-q').forEach(qEl => {
+      const buttons = qEl.querySelectorAll<HTMLButtonElement>('.mcq-option');
+      const explEl  = qEl.querySelector<HTMLElement>('.mcq-explanation');
+      if (!buttons.length) return;
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (buttons[0].disabled) return;
+          
+          if (!qEl.dataset.viewed) {
+            qEl.dataset.viewed = "true";
+            viewedCount++;
+            viewedSpan.textContent = viewedCount.toString();
+          }
+
+          const chosen  = btn.dataset.optText!.toLowerCase().trim();
+          const correct = btn.dataset.correct!.toLowerCase().trim();
+          const isCorrect = correct.includes(chosen) || chosen.includes(correct.substring(0,30));
+          buttons.forEach(b => {
+            b.disabled = true;
+            const bText = b.dataset.optText!.toLowerCase().trim();
+            const bCorrect = correct.includes(bText) || bText.includes(correct.substring(0,30));
+            if (bCorrect) b.classList.add(b === btn ? 'correct' : 'revealed-correct');
+          });
+          if (!isCorrect) btn.classList.add('incorrect');
+          if (explEl) explEl.classList.add('visible');
+        });
+      });
+    });
+
+    // Intersection Observer for sticky nav highlighting
+    const sections = document.querySelectorAll('.paper-section-wrapper');
+    const navLinks = document.querySelectorAll('.section-link');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = entry.target.getAttribute('data-idx');
+          navLinks.forEach(link => {
+            if (link.getAttribute('data-idx') === idx) {
+              link.style.background = 'var(--primary)';
+              link.style.color = 'var(--bg)';
+            } else {
+              link.style.background = 'var(--paper-alt)';
+              link.style.color = 'var(--ink-muted)';
+            }
+          });
+          // Scroll the active link into view in the horizontally scrolling container
+          const activeLink = document.querySelector(`.section-link[data-idx="${idx}"]`);
+          if (activeLink) activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      });
+    }, { rootMargin: '-20% 0px -75% 0px' });
+    
+    sections.forEach(sec => observer.observe(sec));
+  </script>
+</Layout>
