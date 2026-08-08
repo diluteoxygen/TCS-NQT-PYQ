@@ -4,7 +4,11 @@ import PaperListItem from '../../components/PaperListItem.astro';
 import { getCollection } from 'astro:content';
 
 const papers = await getCollection('papers');
-const sorted = papers.sort((a,b) => a.data.title.localeCompare(b.data.title));
+const sorted = papers.sort((a, b) => {
+  if (a.data.id === 'pyq-300') return 1;
+  if (b.data.id === 'pyq-300') return -1;
+  return a.data.title.localeCompare(b.data.title);
+});
 ---
 <Layout title="Previous Year Papers">
   <div class="page-shell no-sidebar">
