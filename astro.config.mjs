@@ -4,8 +4,8 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://oxy.github.io',
-  base: '/TCS-NQT-PYQ-QUESTIONS',
+  site: 'https://diluteoxygen.github.io',
+  base: '/TCS-NQT-PYQ',
   integrations: [sitemap()],
   trailingSlash: 'never',
 });
