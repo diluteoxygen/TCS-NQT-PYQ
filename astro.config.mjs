@@ -6,6 +6,9 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://diluteoxygen.github.io',
   base: '/TCS-NQT-PYQ/',
+  build: {
+    format: 'file'
+  },
   integrations: [sitemap()],
   trailingSlash: 'never',
 });
