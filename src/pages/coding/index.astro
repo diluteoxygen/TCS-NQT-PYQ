@@ -101,7 +101,7 @@ const countByTopic  = (t: string) => questions.filter(q => q.data.topics.include
       <div class="q-list" id="q-list" role="list">
         {sorted.map((q, i) => (
           <a
-            href={`${import.meta.env.BASE_URL}coding/${q.id}`}
+            href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding/${q.id}`}
             class="q-row"
             role="listitem"
             data-difficulty={q.data.difficulty}

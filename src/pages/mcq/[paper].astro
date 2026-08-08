@@ -31,7 +31,7 @@ const OPTION_LABELS = ['A','B','C','D'];
 <Layout title={title}>
   <div class="page-shell no-sidebar">
     <main class="main-content" style="max-width:58rem;" data-pagefind-body>
-      <div class="detail-breadcrumb"><a href={`${import.meta.env.BASE_URL}mcq`}>← MCQ Bank</a></div>
+      <div class="detail-breadcrumb"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/mcq`}>← MCQ Bank</a></div>
       <div class="page-header">
         <h1 class="page-title">{title}</h1>
         {paperMeta && (

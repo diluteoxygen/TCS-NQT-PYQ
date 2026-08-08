@@ -31,7 +31,7 @@ const relatedCoding = n.category === 'dsa-patterns'
   <div class="page-shell no-sidebar">
     <main class="main-content" style="max-width:54rem;" data-pagefind-body>
       <div class="detail-breadcrumb">
-        <a href={`${import.meta.env.BASE_URL}notes`}>← Notes</a> / {categoryLabel[n.category] ?? n.category}
+        <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/notes`}>← Notes</a> / {categoryLabel[n.category] ?? n.category}
       </div>
       <div class="detail-header">
         <h1 class="detail-title">{n.title}</h1>
@@ -48,7 +48,7 @@ const relatedCoding = n.category === 'dsa-patterns'
           <div style="font-weight:600; font-size:var(--text-md); margin-bottom:var(--space-3); color:var(--ink);">Related Practice Problems</div>
           <div style="display:flex; flex-direction:column; gap:var(--space-2);">
             {relatedCoding.map(q => (
-              <a href={`${import.meta.env.BASE_URL}coding/${q.id}`} style="display:flex; align-items:center; gap:var(--space-2); color:var(--ink); text-decoration:none; padding:var(--space-2); border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--paper); transition:border-color 0.1s;">
+              <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding/${q.id}`} style="display:flex; align-items:center; gap:var(--space-2); color:var(--ink); text-decoration:none; padding:var(--space-2); border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--paper); transition:border-color 0.1s;">
                 <span class={`badge badge-${q.data.difficulty}`} style="min-width:40px; text-align:center;">
                   {q.data.difficulty === 'easy' ? 'E' : q.data.difficulty === 'medium' ? 'M' : q.data.difficulty === 'hard' ? 'H' : q.data.difficulty}
                 </span>

@@ -23,7 +23,7 @@ const dsa = notes.filter(n => n.data.category === 'dsa-patterns');
           </div>
           <div class="q-list">
             {hr.map((n, i) => (
-              <a href={`${import.meta.env.BASE_URL}notes/${n.id}`} class="q-row">
+              <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/notes/${n.id}`} class="q-row">
                 <span class="q-num">{i + 1}</span>
                 <span class="q-title">{n.data.title}</span>
               </a>
@@ -38,7 +38,7 @@ const dsa = notes.filter(n => n.data.category === 'dsa-patterns');
           </div>
           <div class="q-list">
             {dsa.map((n, i) => (
-              <a href={`${import.meta.env.BASE_URL}notes/${n.id}`} class="q-row">
+              <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/notes/${n.id}`} class="q-row">
                 <span class="q-num">{i + 1}</span>
                 <span class="q-title">{n.data.title}</span>
               </a>

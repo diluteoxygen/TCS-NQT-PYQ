@@ -25,7 +25,7 @@ const sorted = papers.sort((a,b) => a.data.title.localeCompare(b.data.title));
             title={p.data.title}
             sections={p.data.sections}
             questionCount={p.data.questionCount}
-            href={`${import.meta.env.BASE_URL}papers/${p.data.id}`}
+            href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/papers/${p.data.id}`}
           />
         ))}
       </div>

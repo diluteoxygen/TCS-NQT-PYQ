@@ -31,7 +31,7 @@ const allNotes = await getCollection('topic-notes');
 
       <!-- Breadcrumb -->
       <div class="detail-breadcrumb">
-        <a href={`${import.meta.env.BASE_URL}coding`}>← Coding Questions</a>
+        <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding`}>← Coding Questions</a>
       </div>
 
       <!-- Header -->
@@ -75,7 +75,7 @@ const allNotes = await getCollection('topic-notes');
               const v = all.find(x => x.id === vId);
               return v ? (
                 <span>
-                  <a href={`${import.meta.env.BASE_URL}coding/${v.id}`} style="color:var(--ink); font-weight:500;">{v.data.title}</a>
+                  <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding/${v.id}`} style="color:var(--ink); font-weight:500;">{v.data.title}</a>
                   {i < (q.variants?.length ?? 0) - 1 ? ', ' : ''}
                 </span>
               ) : null;
@@ -187,10 +187,10 @@ const allNotes = await getCollection('topic-notes');
       <!-- Prev / Next nav -->
       <div style="display:flex;justify-content:space-between;margin-top:var(--space-12);padding-top:var(--space-4);border-top:1px solid var(--border);font-size:var(--text-sm);">
         {prev
-          ? <a id="nav-prev" href={`${import.meta.env.BASE_URL}coding/${prev.id}`}>← {prev.data.title}</a>
+          ? <a id="nav-prev" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding/${prev.id}`}>← {prev.data.title}</a>
           : <span/>
         }
-        {next && <a id="nav-next" href={`${import.meta.env.BASE_URL}coding/${next.id}`}>{next.data.title} →</a>}
+        {next && <a id="nav-next" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/coding/${next.id}`}>{next.data.title} →</a>}
       </div>
 
       <!-- Report issue link -->
@@ -227,7 +227,7 @@ const allNotes = await getCollection('topic-notes');
             </div>
             <ul style="margin:0; padding-left:var(--space-4); font-size:var(--text-sm);">
               {relatedNotes.map(n => (
-                <li style="margin-bottom:var(--space-1);"><a href={`${import.meta.env.BASE_URL}notes/${n.id}`} style="color:var(--ink);">{n.data.title}</a></li>
+                <li style="margin-bottom:var(--space-1);"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/notes/${n.id}`} style="color:var(--ink);">{n.data.title}</a></li>
               ))}
             </ul>
           </div>
