@@ -2,7 +2,7 @@
 
 A fast, offline-first study tool for the TCS National Qualifier Test. Covers coding questions, full MCQ papers, and HR prep — all from verified previous-year sources.
 
-**Live:** [github.com/diluteoxygen/TCS-NQT-PYQ](https://github.com/diluteoxygen/TCS-NQT-PYQ)
+**Live:** https://tcs.oxycodes.online/
 
 > **Disclaimer:** Independent, community-maintained resource. Not affiliated with or endorsed by Tata Consultancy Services (TCS).
 
